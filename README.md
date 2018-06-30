@@ -6,6 +6,6 @@ See [nayuki.io's post on simulated annealing](https://www.nayuki.io/page/simulat
 
 ## Sample output
 
-[[https://github.com/kochab/simulatedannealing-examples/example-output/simulated-annealing-time1530375735368-iters500000-starttemp100,0.bmp|alt=64x64 Image with 500000 iterations and a starting temperature of 100]]
+![64x64 Image with 500000 iterations and a starting temperature of 100](example-output/simulated-annealing-time1530375735368-iters500000-starttemp100,0.bmp?raw=true "64x64 Image with 500000 iterations and a starting temperature of 100")
 
 The above 64x64 image is produced with 500000 iterations and a starting temperature of 100.

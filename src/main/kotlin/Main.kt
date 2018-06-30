@@ -19,7 +19,7 @@ object SAImage {
         // Configurable parameters
         val width = 256
         val height = 256
-        val iterations = 1000000000000
+        val iterations = 3000000L
         val temp = 100.0
         val rng = SecureRandom()
 

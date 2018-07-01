@@ -29,6 +29,6 @@ compileTestKotlin {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'SimulatedAnnealingOnImage'
+        attributes 'Main-Class': 'SAImage'
     }
 }

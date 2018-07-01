@@ -17,15 +17,26 @@ object SAImage {
     @JvmStatic
     fun main(args: Array<String>) {
         // Configurable parameters
-        val width = 256
-        val height = 256
-        val iterations = 3000000L
-        val temp = 100.0
+        val width = System.getenv("SA_WIDTH").let { if (it == null) 256 else it.toInt() }
+        val height = System.getenv("SA_HEIGHT").let { if (it == null) 256 else it.toInt() }
+        val iterations = System.getenv("SA_ITER").let { if (it == null) 10000000L else it.toLong() }
+        val temp = System.getenv("SA_TEMP").let { if (it == null) 100.0 else it.toDouble() }
+        val progress = System.getenv("SA_PROGRESS")
+        val output = System.getenv("SA_OUTPUT") ?: progress
         val rng = SecureRandom()
 
         // Run the heavy computation
-        val problem = PixelProblem(width, height, rng) {
-            n, e, retry -> if (n % 1000 == 0) println("#$n\tE=$e\tRETRY=$retry")
+        val problem = PixelProblem(width, height, rng)
+
+        problem.callback = { n, e, retry ->
+            if (n % 1000 == 0) {
+                println("#$n\tE=$e\tRETRY=$retry")
+                if (progress != null) {
+                    val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
+                    image.setRGB(0, 0, width, height, problem.data, 0, width)
+                    ImageIO.write(image, "bmp", File(progress))
+                }
+            }
         }
 
         val solver = Solver(problem, ExponentialDecayScheduler(temp, iterations), rng)
@@ -34,9 +45,10 @@ object SAImage {
         // Write output image
         val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
         image.setRGB(0, 0, width, height, problem.data, 0, width)
-        val outputFilename = String.format("simulated-annealing-time%d-iters%d-starttemp%.1f.bmp",
-                System.currentTimeMillis(), iterations, temp)
-        ImageIO.write(image, "bmp", File(outputFilename))
+
+        val outfile = File(output ?: String.format("simulated-annealing-time%d-iters%d-starttemp%.1f.bmp",
+                System.currentTimeMillis(), iterations, temp))
+        ImageIO.write(image, "bmp", outfile)
     }
 
 }

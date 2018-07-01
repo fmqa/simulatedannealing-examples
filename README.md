@@ -2,7 +2,7 @@
 
 This demo uses the [simulated annealing library](https://github.com/kochab/simulatedannealing) to reorder a 256x256 RGB bitmap containing noise so as to minimize the adjacent difference between individual pixels.
 
-See [nayuki.io's post on simulated annealing](https://www.nayuki.io/page/simulated-annealing-demo) for an explanation of the optimization problem. This is a Kotlin re-implementation of the demo, using the simulated annealing library.
+See [Project Nayuki's post on simulated annealing](https://www.nayuki.io/page/simulated-annealing-demo) for an explanation of the optimization problem. This is a Kotlin re-implementation of the demo, using the simulated annealing library.
 
 ## Sample output
 

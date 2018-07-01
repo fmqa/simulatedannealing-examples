@@ -1,7 +1,7 @@
 /*
  * Graphical simulated annealing demo.
  *
- * Re-implementation of the original demo by Project Nayuki (nayuki.io).
+ * Re-implementation of the original demo by Project Nayuki (https://www.nayuki.io/page/simulated-annealing-demo).
  */
 
 import org.kochab.simulatedannealing.ExponentialDecayScheduler

@@ -86,7 +86,11 @@ class PixelProblem(val width: Int, val height: Int, val random: Random, var call
             }
             number++
 
+            // Set the visited state to true. If this state is visited again,
+            // the random variables will be re-rolled, thus ensuring that a different
+            // successor state is generated.
             done = true
+
             return UndoableState()
         }
     }

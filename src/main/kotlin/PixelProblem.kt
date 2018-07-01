@@ -5,6 +5,11 @@ import kotlin.math.abs
 
 typealias PixelProblemCallback = (n: Int, e: Double, retry: Boolean) -> Unit
 
+/**
+ * Adjacent pixel difference optimization problem.
+ *
+ * Partially based on https://www.nayuki.io/page/simulated-annealing-demo ("Simulated annealing demo" by Project Nayuki)
+ */
 class PixelProblem(val width: Int, val height: Int, val random: Random, val callback: PixelProblemCallback?) : Problem<PixelProblem.UndoableState> {
     var number = 0
 

@@ -25,6 +25,7 @@ object SAImage {
         val iterations = System.getenv("SA_ITER").let { if (it == null) 10000000L else it.toLong() }
         val temp = System.getenv("SA_TEMP").let { if (it == null) 100.0 else it.toDouble() }
         val output = System.getenv("SA_OUTPUT")
+        val mode = System.getenv("SA_MODE")
         val rng = SecureRandom()
 
         // Run the heavy computation.
@@ -39,6 +40,14 @@ object SAImage {
                 }
             }
         }
+
+        val dof = when (mode) {
+            "free" -> true
+            "adjacent" -> false
+            else -> false
+        }
+
+        problem.mode = dof
 
         val outfile = Paths.get(output ?: String.format("simulated-annealing-time%d-iters%d-starttemp%.1f.bmp",
                 System.currentTimeMillis(), iterations, temp))

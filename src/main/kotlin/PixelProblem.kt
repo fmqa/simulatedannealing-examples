@@ -17,63 +17,45 @@ class PixelProblem(val width: Int, val height: Int, val random: Random, var call
     var number = 0
 
     /**
+     * Swap mode (true: free, false: adjacent).
+     */
+    var mode = false
+
+    /**
      * State class that can rollback changes done to the pixel matrix.
      *
      * This class reverses the previous perturbation before applying a new one.
      */
-    inner class UndoableState : SearchState<UndoableState> {
+    abstract inner class UndoableState: SearchState<UndoableState> {
         /**
-         * Energy of this state (before perturbation).
+         * Indicates whether this state has been visited or not.
+         */
+        private var visited = false
+
+        /**
+         * The level of energy before perturbation.
          */
         val energy = energy()
 
         /**
-         * Random horizontal translation offset (-1: Left, 1: Right).
+         * Swaps two pixels.
          */
-        var dx = if (random.nextBoolean()) 1 else -1
+        protected abstract fun swap()
 
         /**
-         * Random vertical translation offset (-1: Top, 1: Bottom).
+         * Regenerates random variables.
          */
-        var dy = if (random.nextBoolean()) 1 else -1
+        protected abstract fun roll()
 
         /**
-         * Random pixel X-coordinate.
+         * Returns the next state.
+         *
+         * @return The next state.
          */
-        var x = 1 + random.nextInt(width - 2)
-
-        /**
-         * Random pixel Y-coordinate.
-         */
-        var y = 1 + random.nextInt(height - 2)
-
-        /**
-         * Indicates whether this state has already been visited.
-         */
-        var done = false
-
-        /**
-         * Swap pixel (x, y) with (x + dx, y + dy).
-         */
-        private fun swap() {
-            with(data[y * width + x]) {
-                data[y * width + x] = data[(y + dy) * width + x + dx]
-                data[(y + dy) * width + x + dx] = this
-            }
-        }
-
-        /**
-         * Regenerate random variables.
-         */
-        private fun roll() {
-            dx = if (random.nextBoolean()) 1 else -1
-            dy = if (random.nextBoolean()) 1 else -1
-            x = 1 + random.nextInt(width - 2)
-            y = 1 + random.nextInt(height - 2)
-        }
+        protected abstract fun next(): UndoableState
 
         override fun step(): UndoableState {
-            if (done) {
+            if (visited) {
                 // Rollback changes if this state was already visited.
                 swap()
                 // Generate new RNG values.
@@ -82,17 +64,115 @@ class PixelProblem(val width: Int, val height: Int, val random: Random, var call
             swap()
 
             callback?.let {
-                it(number, energy, done)
+                it(number, energy, visited)
             }
             number++
 
             // Set the visited state to true. If this state is visited again,
             // the random variables will be re-rolled, thus ensuring that a different
             // successor state is generated.
-            done = true
+            visited = true
 
-            return UndoableState()
+            return next()
         }
+    }
+
+    /**
+     * State class that swaps arbitrary pixels.
+     */
+    inner class FreeSwapState : UndoableState() {
+        /**
+         * Random pixel X-coordinate.
+         */
+        var x1 = random.nextInt(width)
+
+        /**
+         * Random pixel Y-coordinate.
+         */
+        var y1 = random.nextInt(height)
+
+        /**
+         * Random pixel X-coordinate.
+         */
+        var x0 = random.nextInt(width)
+
+        /**
+         * Random pixel Y-coordinate.
+         */
+        var y0 = random.nextInt(height)
+
+        /**
+         * Swap pixel (x0, y0) with (x1, y1).
+         */
+        override fun swap() {
+            val i = y0 * width + x0
+            val j = y1 * width + x1
+            with(data[i]) {
+                data[i] = data[j]
+                data[j] = this
+            }
+        }
+
+        /**
+         * Regenerate random variables.
+         */
+        override fun roll() {
+            x0 = random.nextInt(width)
+            y0 = random.nextInt(height)
+            x1 = random.nextInt(width)
+            y1 = random.nextInt(height)
+        }
+
+        override fun next() = FreeSwapState()
+    }
+
+    /**
+     * State class that swaps neighboring pixels.
+     */
+    inner class AdjacentSwapState : UndoableState() {
+        /**
+         * Random horizontal translation offset (-1: Left, 1: Right).
+         */
+        var x = 1 + random.nextInt(width - 2)
+
+        /**
+         * Random vertical translation offset (-1: Top, 1: Bottom).
+         */
+        var y = 1 + random.nextInt(height - 2)
+
+        /**
+         * Random X-translation (-1/left or +1/right)
+         */
+        var dx = if (random.nextBoolean()) -1 else 1
+
+        /**
+         * Random Y-translation (-1/up or +1/down).
+         */
+        var dy = if (random.nextBoolean()) -1 else 1
+
+        /**
+         * Swap pixel (x, y) with (x + dx, y + dy).
+         */
+        override fun swap() {
+            val i = y * width + x
+            val j = (y + dy) * width + x + dx
+            with(data[i]) {
+                data[i] = data[j]
+                data[j] = this
+            }
+        }
+
+        /**
+         * Regenerate random variables.
+         */
+        override fun roll() {
+            x = 1 + random.nextInt(width - 2)
+            y = 1 + random.nextInt(height -2 )
+            dx = if (random.nextBoolean()) -1 else 1
+            dy = if (random.nextBoolean()) -1 else 1
+        }
+
+        override fun next() = AdjacentSwapState()
     }
 
     /**
@@ -104,7 +184,7 @@ class PixelProblem(val width: Int, val height: Int, val random: Random, var call
 
     override fun energy(searchState: UndoableState) = searchState.energy
 
-    override fun initialState() = UndoableState()
+    override fun initialState() = if (mode) FreeSwapState() else AdjacentSwapState()
 
     /**
      * Computes the sum of absolute differences of the RGB components of two 24-bit RGB triples.

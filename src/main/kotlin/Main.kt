@@ -30,25 +30,27 @@ object SAImage {
 
         problem.callback = { n, e, retry ->
             if (n % 1000 == 0) {
-                println("#$n\tE=$e\tRETRY=$retry")
-                if (progress != null) {
-                    val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
-                    image.setRGB(0, 0, width, height, problem.data, 0, width)
-                    ImageIO.write(image, "bmp", File(progress))
+                if (retry) {
+                    println("RETRY\t#$n\tE=$e")
+                } else {
+                    println("MOVE\t#$n\tE=$e")
                 }
             }
         }
 
         val solver = Solver(problem, ExponentialDecayScheduler(temp, iterations), rng)
-        val result = solver.solve()
-
-        // Write output image
-        val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
-        image.setRGB(0, 0, width, height, problem.data, 0, width)
 
         val outfile = File(output ?: String.format("simulated-annealing-time%d-iters%d-starttemp%.1f.bmp",
                 System.currentTimeMillis(), iterations, temp))
-        ImageIO.write(image, "bmp", outfile)
+
+        solver.setListener { t, n, state, e ->
+            val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
+            image.setRGB(0, 0, width, height, problem.data, 0, width)
+            ImageIO.write(image, "bmp", outfile)
+            println("MIN\t#$n\tE=$e")
+        }
+
+        solver.solve()
     }
 
 }

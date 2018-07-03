@@ -22,8 +22,7 @@ object SAImage {
         val height = System.getenv("SA_HEIGHT").let { if (it == null) 256 else it.toInt() }
         val iterations = System.getenv("SA_ITER").let { if (it == null) 10000000L else it.toLong() }
         val temp = System.getenv("SA_TEMP").let { if (it == null) 100.0 else it.toDouble() }
-        val progress = System.getenv("SA_PROGRESS")
-        val output = System.getenv("SA_OUTPUT") ?: progress
+        val output = System.getenv("SA_OUTPUT")
         val rng = SecureRandom()
 
         // Run the heavy computation.
@@ -42,7 +41,7 @@ object SAImage {
         val outfile = File(output ?: String.format("simulated-annealing-time%d-iters%d-starttemp%.1f.bmp",
                 System.currentTimeMillis(), iterations, temp))
 
-        val solver = Solver(problem, ExponentialDecayScheduler(temp, iterations), rng, MinimumListener { t, n, state, e ->
+        val solver = Solver(problem, ExponentialDecayScheduler(temp, iterations), rng, MinimumListener { _, n, _, e ->
             val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
             image.setRGB(0, 0, width, height, problem.data, 0, width)
             ImageIO.write(image, "bmp", outfile)

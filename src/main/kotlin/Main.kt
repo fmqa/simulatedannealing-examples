@@ -5,11 +5,13 @@
  */
 
 import org.kochab.simulatedannealing.ExponentialDecayScheduler
-import org.kochab.simulatedannealing.Solver
 import org.kochab.simulatedannealing.MinimumListener
+import org.kochab.simulatedannealing.Solver
 import java.awt.image.BufferedImage
-import java.io.File
 import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
 import java.security.SecureRandom
 import javax.imageio.ImageIO
 
@@ -38,13 +40,20 @@ object SAImage {
             }
         }
 
-        val outfile = File(output ?: String.format("simulated-annealing-time%d-iters%d-starttemp%.1f.bmp",
+        val outfile = Paths.get(output ?: String.format("simulated-annealing-time%d-iters%d-starttemp%.1f.bmp",
                 System.currentTimeMillis(), iterations, temp))
 
         val solver = Solver(problem, ExponentialDecayScheduler(temp, iterations), rng, MinimumListener { _, n, _, e ->
             val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
             image.setRGB(0, 0, width, height, problem.data, 0, width)
-            ImageIO.write(image, "bmp", outfile)
+            Files.createTempFile("simulated-annealing", "-$n").run {
+                try {
+                    ImageIO.write(image, "bmp", toFile())
+                    Files.move(this, outfile, StandardCopyOption.ATOMIC_MOVE)
+                } catch (e: Exception) {
+                    Files.delete(this)
+                }
+            }
             println("MIN\t#$n\tE=$e")
         })
 

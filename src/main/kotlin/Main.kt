@@ -52,7 +52,7 @@ object SAImage {
         val outfile = Paths.get(output ?: String.format("simulated-annealing-time%d-iters%d-starttemp%.1f.bmp",
                 System.currentTimeMillis(), iterations, temp))
 
-        val solver = Solver(problem, ExponentialDecayScheduler(temp, iterations), rng, MinimumListener { _, n, _, e ->
+        val solver = Solver(problem, ExponentialDecayScheduler(temp, iterations), rng, MinimumListener { _, n, state ->
             val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
             image.setRGB(0, 0, width, height, problem.data, 0, width)
             Files.createTempFile("simulated-annealing", "-$n").run {
@@ -63,6 +63,7 @@ object SAImage {
                     Files.delete(this)
                 }
             }
+            val e = problem.energy(state)
             println("MIN\t#$n\tE=$e")
         })
 

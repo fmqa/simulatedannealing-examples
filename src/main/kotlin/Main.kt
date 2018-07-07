@@ -66,7 +66,7 @@ fun main(args: Array<String>): Unit = mainBody {
             Files.createTempFile("simulated-annealing", "-$n").run {
                 try {
                     ImageIO.write(image, "bmp", toFile())
-                    Files.move(this, outpath, StandardCopyOption.ATOMIC_MOVE)
+                    Files.move(this, outpath, StandardCopyOption.REPLACE_EXISTING)
                 } catch (e: Exception) {
                     Files.delete(this)
                     throw e

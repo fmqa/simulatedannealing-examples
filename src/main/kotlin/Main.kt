@@ -58,15 +58,15 @@ fun main(args: Array<String>): Unit = mainBody {
 
         val scheduler = ExponentialDecayScheduler(temperature, iterations)
 
-        val outpath = output ?: Paths.get("simulated-annealing-iters${iterations}-starttemp${temperature}.bmp")
+        val outpath = (output ?: Paths.get("simulated-annealing-iters${iterations}-starttemp${temperature}.bmp")).toAbsolutePath()
 
         val solver = Solver(problem, scheduler, rng, MinimumListener { _, n, state ->
             val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
             image.setRGB(0, 0, width, height, problem.data, 0, width)
-            Files.createTempFile("simulated-annealing", "-$n").run {
+            Files.createTempFile(outpath.parent,"simulated-annealing", "-$n").run {
                 try {
                     ImageIO.write(image, "bmp", toFile())
-                    Files.move(this, outpath, StandardCopyOption.REPLACE_EXISTING)
+                    Files.move(this, outpath, StandardCopyOption.ATOMIC_MOVE)
                 } catch (e: Exception) {
                     Files.delete(this)
                     throw e

@@ -45,15 +45,7 @@ fun main(args: Array<String>): Unit = mainBody {
     val parser = ArgParser(args)
     parser.parseInto(::AnnealingArgs).run {
         val rng = if (secure) SecureRandom() else Random()
-        val problem = PixelProblem(width, height, rng) { n, e, retry ->
-            if (n % 1000 == 0) {
-                if (retry) {
-                    println("RETRY\t#$n\tE=$e")
-                } else {
-                    println("MOVE\t#$n\tE=$e")
-                }
-            }
-        }
+        val problem = PixelProblem(width, height, rng)
         problem.mode = mode
 
         val scheduler = ExponentialDecayScheduler(temperature, iterations)
@@ -68,13 +60,25 @@ fun main(args: Array<String>): Unit = mainBody {
                     ImageIO.write(image, "bmp", toFile())
                     Files.move(this, outpath, StandardCopyOption.ATOMIC_MOVE)
                 } catch (e: Exception) {
-                    Files.delete(this)
                     throw e
+                } finally {
+                    Files.deleteIfExists(this)
                 }
             }
             val e = problem.energy(state)
             println("MIN\t#$n\tE=$e")
         })
+
+        problem.callback = { e, retry ->
+            val n = solver.steps
+            if (n % 1000 == 0L) {
+                if (retry) {
+                    println("RETRY\t#$n\tE=$e")
+                } else {
+                    println("MOVE\t#$n\tE=$e")
+                }
+            }
+        }
 
         solver.solve()
     }

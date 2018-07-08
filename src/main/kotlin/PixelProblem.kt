@@ -3,7 +3,7 @@ import org.kochab.simulatedannealing.SearchState
 import java.util.*
 import kotlin.math.abs
 
-typealias PixelProblemCallback = (n: Int, e: Double, retry: Boolean) -> Unit
+typealias PixelProblemCallback = (e: Double, retry: Boolean) -> Unit
 
 /**
  * Adjacent pixel difference optimization problem.
@@ -11,11 +11,6 @@ typealias PixelProblemCallback = (n: Int, e: Double, retry: Boolean) -> Unit
  * Partially based on https://www.nayuki.io/page/simulated-annealing-demo ("Simulated annealing demo" by Project Nayuki)
  */
 class PixelProblem(val width: Int, val height: Int, val random: Random, var callback: PixelProblemCallback? = null) : Problem<PixelProblem.UndoableState> {
-    /**
-     * Current iteration.
-     */
-    var number = 0
-
     /**
      * Swap mode (true: free, false: adjacent).
      */
@@ -64,9 +59,8 @@ class PixelProblem(val width: Int, val height: Int, val random: Random, var call
             swap()
 
             callback?.let {
-                it(number, energy, visited)
+                it(energy, visited)
             }
-            number++
 
             // Set the visited state to true. If this state is visited again,
             // the random variables will be re-rolled, thus ensuring that a different

@@ -135,14 +135,22 @@ class PixelProblem(val width: Int, val height: Int, val random: Random, var call
         var y = 1 + random.nextInt(height - 2)
 
         /**
-         * Random X-translation (-1/left or +1/right)
+         * Random X-translation (-1/left or +1/right, or 0)
          */
-        var dx = if (random.nextBoolean()) -1 else 1
+        var dx = random.nextInt(3) - 1
 
         /**
-         * Random Y-translation (-1/up or +1/down).
+         * Random Y-translation (-1/up or +1/down, or 0).
          */
-        var dy = if (random.nextBoolean()) -1 else 1
+        var dy = random.nextInt(3) - 1
+
+        // If dx=dy=0, try to generate another move.
+        init {
+            while (dx == 0 && dy == 0) {
+                dx = random.nextInt(3) - 1
+                dy = random.nextInt(3) - 1
+            }
+        }
 
         /**
          * Swap pixel (x, y) with (x + dx, y + dy).

@@ -8,7 +8,6 @@ import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
 import com.xenomachina.argparser.mainBody
 import org.kochab.simulatedannealing.ExponentialDecayScheduler
-import org.kochab.simulatedannealing.MinimumListener
 import org.kochab.simulatedannealing.Solver
 import java.awt.image.BufferedImage
 import java.io.IOException
@@ -45,42 +44,38 @@ fun main(args: Array<String>): Unit = mainBody {
     val parser = ArgParser(args)
     parser.parseInto(::AnnealingArgs).run {
         val rng = if (secure) SecureRandom() else Random()
-        val problem = PixelProblem(width, height, rng)
-        problem.mode = mode
+        val problem = PixelProblem(width, height, rng, mode)
 
         val scheduler = ExponentialDecayScheduler(temperature, iterations)
 
-        val outpath = (output ?: Paths.get("simulated-annealing-iters${iterations}-starttemp${temperature}.bmp")).toAbsolutePath()
+        val outpath = (output
+                ?: Paths.get("simulated-annealing-iters${iterations}-starttemp${temperature}.bmp")).toAbsolutePath()
 
-        val solver = Solver(problem, scheduler, rng, MinimumListener { _, n, state ->
-            val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
-            image.setRGB(0, 0, width, height, problem.data, 0, width)
-            Files.createTempFile(outpath.parent,"simulated-annealing", "-$n").run {
-                try {
-                    ImageIO.write(image, "bmp", toFile())
-                    Files.move(this, outpath, StandardCopyOption.ATOMIC_MOVE)
-                } catch (e: Exception) {
-                    throw e
-                } finally {
-                    Files.deleteIfExists(this)
+        val solver = Solver(problem, scheduler, problem.initialState(), rng);
+
+        for (candidate in solver) {
+            if (candidate.isMinimum) {
+                val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
+                image.setRGB(0, 0, width, height, problem.data, 0, width)
+                Files.createTempFile(outpath.parent, "simulated-annealing", "-${candidate.iteration}").run {
+                    try {
+                        ImageIO.write(image, "bmp", toFile())
+                        Files.move(this, outpath, StandardCopyOption.ATOMIC_MOVE)
+                    } catch (e: Exception) {
+                        throw e
+                    } finally {
+                        Files.deleteIfExists(this)
+                    }
                 }
-            }
-            val e = problem.energy(state)
-            println("MIN\t#$n\tE=$e")
-        })
-
-        problem.callback = { e, retry ->
-            val n = solver.steps
-            if (n % 1000 == 0L) {
-                if (retry) {
-                    println("RETRY\t#$n\tE=$e")
+                println("MIN\t#${candidate.iteration}\tE=${candidate.state.energy}")
+            } else if (candidate.iteration % 1000 == 0L) {
+                if (candidate.state.visited) {
+                    println("RETRY\t#${candidate.iteration}\tE=${candidate.state.energy}")
                 } else {
-                    println("MOVE\t#$n\tE=$e")
+                    println("MOVE\t#${candidate.iteration}\tE=${candidate.state.energy}")
                 }
             }
         }
-
-        solver.solve()
     }
 }
 

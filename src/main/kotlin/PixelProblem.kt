@@ -1,31 +1,23 @@
-import org.kochab.simulatedannealing.Problem
-import org.kochab.simulatedannealing.SearchState
+import org.kochab.simulatedannealing.Minimizable
 import java.util.*
 import kotlin.math.abs
-
-typealias PixelProblemCallback = (e: Double, retry: Boolean) -> Unit
 
 /**
  * Adjacent pixel difference optimization problem.
  *
  * Partially based on https://www.nayuki.io/page/simulated-annealing-demo ("Simulated annealing demo" by Project Nayuki)
  */
-class PixelProblem(val width: Int, val height: Int, val random: Random, var callback: PixelProblemCallback? = null) : Problem<PixelProblem.UndoableState> {
-    /**
-     * Swap mode (true: free, false: adjacent).
-     */
-    var mode = false
-
+class PixelProblem(val width: Int, val height: Int, val random: Random, val mode: Boolean = false) : Minimizable<PixelProblem.UndoableState> {
     /**
      * State class that can rollback changes done to the pixel matrix.
      *
      * This class reverses the previous perturbation before applying a new one.
      */
-    abstract inner class UndoableState: SearchState<UndoableState> {
+    abstract inner class UndoableState {
         /**
          * Indicates whether this state has been visited or not.
          */
-        private var visited = false
+        var visited = false
 
         /**
          * The level of energy before perturbation.
@@ -49,7 +41,7 @@ class PixelProblem(val width: Int, val height: Int, val random: Random, var call
          */
         protected abstract fun next(): UndoableState
 
-        override fun step(): UndoableState {
+        fun step(): UndoableState {
             if (visited) {
                 // Rollback changes if this state was already visited.
                 swap()
@@ -57,10 +49,6 @@ class PixelProblem(val width: Int, val height: Int, val random: Random, var call
                 roll()
             }
             swap()
-
-            callback?.let {
-                it(energy, visited)
-            }
 
             // Set the visited state to true. If this state is visited again,
             // the random variables will be re-rolled, thus ensuring that a different
@@ -169,7 +157,7 @@ class PixelProblem(val width: Int, val height: Int, val random: Random, var call
          */
         override fun roll() {
             x = 1 + random.nextInt(width - 2)
-            y = 1 + random.nextInt(height -2 )
+            y = 1 + random.nextInt(height - 2)
             dx = if (random.nextBoolean()) -1 else 1
             dy = if (random.nextBoolean()) -1 else 1
         }
@@ -184,9 +172,11 @@ class PixelProblem(val width: Int, val height: Int, val random: Random, var call
         random.nextInt(0xffffff)
     }
 
+    fun initialState() = if (mode) FreeSwapState() else AdjacentSwapState()
+
     override fun energy(searchState: UndoableState) = searchState.energy
 
-    override fun initialState() = if (mode) FreeSwapState() else AdjacentSwapState()
+    override fun next(state: UndoableState) = state.step()
 
     /**
      * Computes the sum of absolute differences of the RGB components of two 24-bit RGB triples.
